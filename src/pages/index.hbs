@@ -1,0 +1,1521 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon-orange.png" />
+  <title>My Stats Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta property="og:title" content="My Stats Page">
+  <meta property="og:description"
+    content="Your Strava data at a glance. It features useful charts, goals, tables and other ways of looking at your data.">
+  <meta property="og:image" content="/myStatsPageLogo.png">
+  <meta property="og:site_name" content="My Stats Page">
+  <meta property="og:url" content="https://www.mystatspage.com">
+
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/progress-waves.css" />
+  <!--<script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>-->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@^3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
+</head>
+
+<body onload="handlePageLoad()">
+  <img src="/api_logo_pwrdBy_strava_horiz_light.png" style="position: absolute;top: 0px;right: 0px;max-height: 40px" />
+
+  <div style="display: flex; align-items: center; margin-top:-20px">
+    <h1>
+      My Stats Page
+    </h1>
+    <img src="/myStatsPage.png" style="max-height: 70px; margin-left: 10px" />
+    <a href="mailto:mystatspage@gmail.com?subject=Feedback on My Stats Page" style="margin-left: 50px">⮕ Feedback</a>
+    <a href="https://www.paypal.com/donate/?hosted_button_id=8593PEFPSDMXE" target="_blank" style="margin-left: 50px">♥
+      Donate</a>
+  </div>
+
+  <div id="data-loading-modal" class="modal">
+    <div id="data-loading-experience" class="my-class-1 in-progress">
+      Loading
+    </div>
+  </div>
+
+  <div style="display:flex">
+    <div>
+      <img id="pic" src="" /><br />
+      <div id="name"></div>
+      <div id="city"></div>
+    </div>
+    <div style="padding-left:20px; padding-top:20px">
+      <div>
+        Last data refresh: <span id="data-timestamp"></span>
+        <br />
+        <button onclick="getStravaData(false)">
+          Refresh Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <input id="tab-1" type="radio" name="tabs" checked="checked" />
+    <input id="tab-2" type="radio" name="tabs" />
+    <input id="tab-3" type="radio" name="tabs" />
+    <input id="tab-4" type="radio" name="tabs" />
+    <div class="tabs">
+      <label for="tab-1">Cycling</label>
+      <label for="tab-2">Running</label>
+      <label for="tab-3">Hiking</label>
+      <label for="tab-4">All</label>
+    </div>
+    <div class="content">
+      <div id="tab-1-content" class="tab">
+        <h2>Weekly Elevation Progress</h2>
+
+        <div><b>Goal:</b> <input type="number" id="cycling-weekly-elevation-goal-input"
+            oninput="handleWeeklyGoalChange(this.value,'cyclingWeeklyElevationProgress')"> ft.
+        </div>
+
+        <div>
+          <b>Week:</b> <span id="elevation-week-start"></span> to <span id="elevation-week-end"></span>
+          <button title="Back" onclick="handleShiftWeek('back', 'cyclingWeeklyElevationProgress')"> &lt; </button>
+          <button title="Today" onclick="handleShiftWeek('today', 'cyclingWeeklyElevationProgress')">●</button>
+          <button title="Forward" onclick="handleShiftWeek('forward', 'cyclingWeeklyElevationProgress')"> &gt; </button>
+        </div>
+
+        <div style="display: flex; align-items: center">
+          <input type="checkbox" class="switch-checkbox" id="checkbox1"
+            onclick="handlePreviousChecked(this.checked, 'cyclingWeeklyElevationProgress')">
+          <label for="checkbox1">Show previous week</label>
+        </div>
+
+        <div style="position: relative; height:50vh; width:80vw;">
+          <canvas id="weekly-elevation-chart"></canvas>
+        </div>
+
+        <h2>Monthly Elevation Progress</h2>
+
+        <div><b>Goal:</b> <input type="number" id="monthly-elevation-goal-input"
+            oninput="handleMonthlyGoalChange(this.value,'monthlyElevationProgress')"> ft.
+        </div>
+
+        <div>
+          <b>Month:</b>
+          <button title="Back" onclick="handleShiftMonth('back', 'monthlyElevationProgress')"> &lt; </button>
+          <button title="Today" onclick="handleShiftMonth('today', 'monthlyElevationProgress')">●</button>
+          <button title="Forward" onclick="handleShiftMonth('forward', 'monthlyElevationProgress')"> &gt; </button>
+          <span id="elevation-selected-month"></span>
+        </div>
+
+        <div style="display: flex; align-items: center">
+          <input type="checkbox" class="switch-checkbox" id="checkbox2"
+            onclick="handlePreviousChecked(this.checked, 'monthlyElevationProgress')">
+          <label for="checkbox2">Show previous month</label>
+        </div>
+
+        <div style="position: relative; height:50vh; width:80vw">
+          <canvas id="monthly-elevation-chart"></canvas>
+        </div>
+
+        <h2>Rides</h2>
+        <table id="cyclingTable">
+          <thead>
+            <tr id="cyclingHeaderRow"></tr>
+          </thead>
+          <tbody id="cyclingTableBody"></tbody>
+        </table>
+
+      </div>
+      <div id="tab-2-content" class="tab">
+        <h2>Weekly Distance Progress</h2>
+
+        <div><b>Goal:</b> <input type="number" id="weekly-distance-goal-input"
+            oninput="handleWeeklyGoalChange(this.value, 'weeklyDistanceProgress')">
+          miles
+        </div>
+
+        <div>
+          <b>Week:</b> <span id="distance-week-start"></span> to <span id="distance-week-end"></span>
+          <button title="Back" onclick="handleShiftWeek('back', 'weeklyDistanceProgress')"> &lt; </button>
+          <button title="Today" onclick="handleShiftWeek('today', 'weeklyDistanceProgress')">●</button>
+          <button title="Forward" onclick="handleShiftWeek('forward', 'weeklyDistanceProgress')"> &gt; </button>
+        </div>
+
+        <div style="display: flex; align-items: center">
+          <input type="checkbox" class="switch-checkbox" id="checkbox3"
+            onclick="handlePreviousChecked(this.checked, 'weeklyDistanceProgress')">
+          <label for="checkbox3">Show previous week</label>
+        </div>
+
+        <div style="position: relative; height:50vh; width:80vw">
+          <canvas id="weekly-distance-chart"></canvas>
+        </div>
+
+        <h2>Monthly Distance Progress</h2>
+
+        <div><b>Goal:</b> <input type="number" id="monthly-distance-goal-input"
+            oninput="handleMonthlyGoalChange(this.value,'monthlyDistanceProgress')"> miles
+        </div>
+
+        <div>
+          <b>Month:</b>
+          <button title="Back" onclick="handleShiftMonth('back', 'monthlyDistanceProgress')"> &lt; </button>
+          <button title="Today" onclick="handleShiftMonth('today', 'monthlyDistanceProgress')">●</button>
+          <button title="Forward" onclick="handleShiftMonth('forward', 'monthlyDistanceProgress')"> &gt; </button>
+          <span id="distance-selected-month"></span>
+        </div>
+
+        <div style="display: flex; align-items: center">
+          <input type="checkbox" class="switch-checkbox" id="checkbox4"
+            onclick="handlePreviousChecked(this.checked, 'monthlyDistanceProgress')">
+          <label for="checkbox4">Show previous month</label>
+        </div>
+
+        <div style="position: relative; height:50vh; width:80vw">
+          <canvas id="monthly-distance-chart"></canvas>
+        </div>
+
+        <h2>Annual Pace Trend</h2>
+        <div>
+          <b>Year:</b>
+          <button title="Back" onclick="handleShiftYear('back', 'annualPaceTrend')"> &lt; </button>
+          <button title="Today" onclick="handleShiftYear('today', 'annualPaceTrend')">●</button>
+          <button title="Forward" onclick="handleShiftYear('forward', 'annualPaceTrend')"> &gt; </button>
+          <span id="pace-selected-year"></span>
+        </div>
+
+        <div style="position: relative; height:50vh; width:80vw">
+          <canvas id="annual-pace-chart"></canvas>
+        </div>
+
+        <h2>Runs</h2>
+        <table id="runningTable">
+          <thead>
+            <tr id="runningHeaderRow"></tr>
+          </thead>
+          <tbody id="runningTableBody"></tbody>
+        </table>
+
+      </div>
+      <div id="tab-3-content" class="tab">
+        <h2>Charts Coming Soon!</h2>
+
+        <h2>Hikes</h2>
+        <table id="hikingTable">
+          <thead>
+            <tr id="hikingHeaderRow"></tr>
+          </thead>
+          <tbody id="hikingTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="tab-4-content" class="tab">
+        <div>
+          <div style="display:flex; align-items:center">
+            <h2>Activities</h2>
+            <button onclick="handleSportsSelectionOpen()" style="height:20px; margin-left:10px">
+              Select Sports
+            </button>
+            <button onclick="handleColumnSelectionOpen()" style="height:20px; margin-left:10px">
+              Columns
+            </button>
+          </div>
+          <div style=" margin-bottom:10px">
+            <b>Selected sports:</b> <span id="selected-sports-list"></span>
+          </div>
+          <table id="activitiesTable">
+            <thead>
+              <tr id="activitiesHeaderRow"></tr>
+            </thead>
+            <tbody id="activitiesTableBody"></tbody>
+          </table>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- *************** -->
+  <!-- Various Dialogs -->
+  <!-- *************** -->
+  <dialog id="sport-selection-dialog">Select activity types to display:
+    <fieldset id="sport-selection-dialog-fieldset"></fieldset>
+    <br />
+    <div style="position: absolute;bottom: 5px;right: 5px;">
+      <button id="sport-selection-dialog-cancel" onclick="handleSportSelectionCancel()">Cancel</button>
+      <button id="sport-selection-dialog-save" onclick="handleSportSelectionSave()">Save</button>
+    </div>
+  </dialog>
+
+  <dialog id="column-selection-dialog">Select columns to display in the table:
+    <fieldset id="column-selection-dialog-fieldset"></fieldset>
+    <br />
+    <div style="position: absolute;bottom: 5px;right: 5px;">
+      <button id="column-selection-dialog-cancel" onclick="handleColumnSelectionCancel()">Cancel</button>
+      <button id="column-selection-dialog-save" onclick="handleColumnSelectionSave()">Save</button>
+    </div>
+  </dialog>
+
+</body>
+
+<script>
+
+  /****************************
+   * Globals                  *
+   ****************************/
+  let activities = [];
+  let earliestActivityDate;
+  let selectedSports = new Map();
+
+  const daysOfTheWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  let chartDefns = {
+    cyclingWeeklyElevationProgress: {
+      firstDay: {},
+      lastDay: {},
+      sportType: "Ride",
+      metric: "total_elevation_gain",
+      domId: "weekly-elevation-chart",
+      weekStartDomId: "elevation-week-start",
+      weekEndDomId: "elevation-week-end",
+      chart: null,
+      labels: daysOfTheWeek,
+      data: [],
+      goal: 2000,
+      goalData: [],
+      barData: [],
+      showPrevious: false,
+      drawFunction: drawWeeklyChart,
+    },
+    monthlyElevationProgress: {
+      selectedMonth: new Date(),
+      sportType: "Ride",
+      metric: "total_elevation_gain",
+      domId: "monthly-elevation-chart",
+      selectedMonthDomId: "elevation-selected-month",
+      chart: null,
+      labels: [],
+      data: [],
+      goal: 10000,
+      goalData: [],
+      barData: [],
+      showPrevious: false,
+      drawFunction: drawMonthlyChart,
+    },
+    weeklyDistanceProgress: {
+      firstDay: {},
+      lastDay: {},
+      sportType: "Run",
+      metric: "distance",
+      domId: "weekly-distance-chart",
+      weekStartDomId: "distance-week-start",
+      weekEndDomId: "distance-week-end",
+      chart: null,
+      labels: daysOfTheWeek,
+      data: [],
+      goal: 20,
+      goalData: [],
+      barData: [],
+      showPrevious: false,
+      drawFunction: drawWeeklyChart,
+    },
+    monthlyDistanceProgress: {
+      selectedMonth: new Date(),
+      sportType: "Run",
+      metric: "distance",
+      domId: "monthly-distance-chart",
+      selectedMonthDomId: "distance-selected-month",
+      chart: null,
+      labels: [],
+      data: [],
+      goal: 80,
+      goalData: [],
+      barData: [],
+      showPrevious: false,
+      drawFunction: drawMonthlyChart,
+    },
+    annualPaceTrend: {
+      selectedYear: new Date(),
+      sportType: "Run",
+      metric: "pace",
+      domId: "annual-pace-chart",
+      selectedYearDomId: "pace-selected-year",
+      chart: null,
+      labels: [],
+      data: [],
+      showPrevious: false,
+      drawFunction: drawAnnualChart,
+    },
+  };
+
+  let tableDefns = {
+    activities: {
+      columnIDs: [
+        "name", "start_date", "sport_type", "distance", "moving_time", "total_elevation_gain",
+        "pace_string", "five_k", "ten_k", "half_marathon", "marathon", "average_speed", "max_speed",
+        "average_heartrate", "max_heartrate", "suffer_score"],
+      columnSortDirections: new Map(),
+      selectedColumns: new Map(),
+      sportType: "All",
+      prefix: "activities",
+      tabularActivities: [],
+      storageKey: "tabluarActivities",
+    },
+    cycling: {
+      columnIDs: [
+        "name", "start_date", "sport_type", "distance", "moving_time", "total_elevation_gain",
+        "average_speed", "max_speed", "average_heartrate", "max_heartrate", "suffer_score"],
+      columnSortDirections: new Map(),
+      sportType: "Ride",
+      prefix: "cycling",
+      tabularActivities: [],
+      storageKey: "tabluarActivitiesCycling",
+    },
+    running: {
+      columnIDs: [
+        "name", "start_date", "sport_type", "distance", "moving_time", "total_elevation_gain",
+        "pace_string", "five_k", "ten_k", "half_marathon", "marathon",
+        "average_heartrate", "max_heartrate", "suffer_score"],
+      columnSortDirections: new Map(),
+      sportType: "Run",
+      prefix: "running",
+      tabularActivities: [],
+      storageKey: "tabluarActivitiesRunning",
+    },
+    hiking: {
+      columnIDs: ["name", "start_date", "sport_type", "distance", "moving_time", "total_elevation_gain"],
+      columnSortDirections: new Map(),
+      sportType: "Hike",
+      prefix: "hiking",
+      tabularActivities: [],
+      storageKey: "tabluarActivitiesHiking",
+    },
+
+  };
+
+  const dataTypes = {
+    string: "string",
+    date: "date",
+    int: "int",
+    float: "number",
+  };
+
+  const activityMetadata = new Map([
+    ["average_heartrate", { displayName: "Avg. Heart Rate", dataType: dataTypes.int, }],
+    ["average_speed", { displayName: "Avg. Speed (mph)", dataType: dataTypes.float, }],
+    ["distance", { displayName: "Distance (miles)", dataType: dataTypes.float, }],
+    ["five_k", { displayName: "5k", dataType: dataTypes.string, }],
+    ["half_marathon", { displayName: "Half Marathon", dataType: dataTypes.string, }],
+    ["marathon", { displayName: "Marathon", dataType: dataTypes.string, }],
+    ["max_heartrate", { displayName: "Max Heart Rate", dataType: dataTypes.int, }],
+    ["max_speed", { displayName: "Max Speed (mph)", dataType: dataTypes.float, }],
+    ["moving_time", { displayName: "Moving Time", dataType: dataTypes.string, }],
+    ["name", { displayName: "Name", dataType: dataTypes.string, }],
+    ["pace", { displayName: "Pace (per mile)", dataType: dataTypes.int, }],
+    ["pace_string", { displayName: "Avg. Pace", dataType: dataTypes.string, }],
+    ["sport_type", { displayName: "Sport", dataType: dataTypes.string, }],
+    ["start_date", { displayName: "Date", dataType: dataTypes.date, }],
+    ["suffer_score", { displayName: "Effort", dataType: dataTypes.float, }],
+    ["ten_k", { displayName: "10k", dataType: dataTypes.string, }],
+    ["total_elevation_gain", { displayName: "Elevation (ft)", dataType: dataTypes.float, }],
+  ]);
+
+  /****************************
+   * Functions (alphabetized) *
+   ****************************/
+  function createAllTabluarData() {
+    createTabularData(tableDefns.activities);
+    createTabularData(tableDefns.cycling);
+    createTabularData(tableDefns.running);
+    createTabularData(tableDefns.hiking);
+  }
+
+  function createTabularData(tableDefn) {
+    tableDefn.tabularActivities = [];
+    let header = [];
+    for (const columnID of tableDefn.columnIDs) {
+      if (tableDefn.prefix == "activities") {
+        if (tableDefn.selectedColumns.get(columnID)) {
+          header.push(columnID);
+        }
+      }
+      else {
+        header.push(columnID);
+      }
+    }
+    tableDefn.tabularActivities.push(header);
+
+    let activities = JSON.parse(localStorage.getItem("activities"));
+    for (let i = 0; i < activities.length; i++) {
+      if (tableDefn.sportType == "All" && !selectedSports.get(activities[i].sport_type)) {
+        continue;
+      }
+      if (tableDefn.sportType != "All" && activities[i].sport_type != tableDefn.sportType) {
+        continue;
+      }
+
+      let tempRow = [];
+      for (let j = 0; j < header.length; j++) {
+        let field = header[j];
+        if (activityMetadata.get(field).dataType != dataTypes.float) {
+          //Special check for name: let's make it a link!
+          //e.g. https://www.strava.com/activities/13636345122
+          if (field == "name") {
+            let url = "https://www.strava.com/activities/" + activities[i].id;
+            tempRow.push("<a href='" + url + "' target='_blank' >" + activities[i][field] + "</a>");
+          }
+          else {
+            tempRow.push(activities[i][field]);
+          }
+        } else {
+          let tempNumber = Number.parseFloat(activities[i][field]).toFixed(2);
+          if (isNaN(tempNumber)) {
+            tempNumber = "";
+          }
+          tempRow.push(tempNumber);
+        }
+      }
+      tableDefn.tabularActivities.push(tempRow);
+    }
+    localStorage.setItem(tableDefn.storageKey, JSON.stringify(tableDefn.tabularActivities));
+  }
+
+  function drawAnnualChart(chartDefn) {
+
+    if (chartDefn.chart) {
+      chartDefn.chart.destroy();
+    }
+
+    chartDefn.data = [];
+
+    let results = filterAnnualActivities(chartDefn.sportType, chartDefn.metric, chartDefn.selectedYear);
+    chartDefn.data = results.data;
+
+    let yMax = (results.stats.mean + (3 * results.stats.stdDev)) * 1000;
+    let yMin = (results.stats.mean - (3 * results.stats.stdDev)) * 1000;
+
+    if (yMin < 0) {
+      yMin = 0;
+    }
+
+    if (yMax > 3600000) {
+      yMax = 3600000;
+    }
+
+    const ctx = document.getElementById(chartDefn.domId);
+
+    chartDefn.chart = new Chart(ctx, {
+      data: {
+        labels: chartDefn.labels,
+        datasets: [
+          {
+            type: 'line',
+            label: activityMetadata.get(chartDefn.metric).displayName,
+            data: chartDefn.data,
+            borderWidth: 1
+          },
+        ]
+      },
+      options: {
+        animation: false,
+        responsive: true,
+
+        scales: {
+          x: {
+            type: 'time',
+            min: new Date("01-01-" + chartDefn.selectedYear.getFullYear()).getTime(),
+            max: new Date("12-31-" + chartDefn.selectedYear.getFullYear()).getTime(),
+            time: {
+              // Luxon format string
+              tooltipFormat: 'DD T'
+            },
+            title: {
+              display: true,
+              text: 'Date'
+            }
+          },
+          y: {
+            type: 'time',
+            min: yMin,
+            max: yMax,
+            time: {
+
+              // Luxon format string
+              tooltipFormat: 'mm:ss',
+              displayFormats: {
+                second: 'mm:ss',
+                minute: 'mm:ss',
+              }
+            },
+            reverse: true,
+            title: {
+              display: true,
+              text: activityMetadata.get(chartDefn.metric).displayName
+            }
+          }
+        },
+
+      }
+    });
+  }
+
+  function drawMonthlyChart(chartDefn) {
+
+    if (chartDefn.chart) {
+      chartDefn.chart.destroy();
+    }
+
+    chartDefn.goalData = [];
+    chartDefn.data = [];
+
+    let numDays = getDaysInMonth(chartDefn.selectedMonth);
+    let m = chartDefn.selectedMonth.toLocaleString('default', { month: 'short' });
+    chartDefn.labels = [];
+    for (let i = 0; i < numDays; i++) {
+      chartDefn.labels.push((i + 1) + "-" + m);
+      chartDefn.goalData.push(Math.ceil((i + 1) * (chartDefn.goal / numDays)));
+    }
+
+    let results = filterMonthlyActivities(chartDefn.sportType, chartDefn.metric, chartDefn.selectedMonth);
+    chartDefn.data = results.data;
+    chartDefn.barData = results.barData;
+    let prevData = results.prevData;
+
+    let datasets = [];
+
+    datasets.push({
+      type: 'line',
+      label: 'Goal',
+      data: chartDefn.goalData,
+      borderWidth: 1
+    });
+
+    datasets.push({
+      type: 'line',
+      label: activityMetadata.get(chartDefn.metric).displayName,
+      data: chartDefn.data,
+      borderWidth: 1
+    });
+
+    datasets.push({
+      type: 'bar',
+      label: activityMetadata.get(chartDefn.metric).displayName + ' from Activities',
+      data: chartDefn.barData,
+      borderWidth: 1
+    });
+
+    if (chartDefn.showPrevious) {
+      datasets.push({
+        type: 'line',
+        label: "Previous " + activityMetadata.get(chartDefn.metric).displayName,
+        data: prevData,
+        borderWidth: 1,
+        borderDash: [10, 5],
+      });
+    }
+
+    const ctx = document.getElementById(chartDefn.domId);
+
+    chartDefn.chart = new Chart(ctx, {
+      data: {
+        labels: chartDefn.labels,
+        datasets: datasets,
+      },
+      options: {
+        animation: false,
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  function drawTable(tableDefn) {
+    const headerRow = document.getElementById(tableDefn.prefix + "HeaderRow");
+    const tableBody = document.getElementById(tableDefn.prefix + "TableBody");
+
+    // Clear existing content
+    headerRow.innerHTML = "";
+    tableBody.innerHTML = "";
+
+    // Add header row
+    tableDefn.tabularActivities[0].forEach(header => {
+      const th = document.createElement("th");
+      th.textContent = activityMetadata.get(header).displayName;
+      th.addEventListener("click", () => sortTable(tableDefn, tableDefn.tabularActivities[0].indexOf(header)));
+      tableDefn.columnSortDirections.set(tableDefn.tabularActivities[0].indexOf(header), true);
+      headerRow.appendChild(th);
+    });
+
+    // Add data rows
+    for (let i = 1; i < tableDefn.tabularActivities.length; i++) {
+      const row = document.createElement("tr");
+      tableDefn.tabularActivities[i].forEach((cell, index) => {
+        const td = document.createElement("td");
+        // TODO: Brittle! We know the first item is html :P 
+        if (index == 0) {
+          td.innerHTML = cell;
+        }
+        else {
+          td.textContent = cell;
+        }
+        row.appendChild(td);
+      });
+      tableBody.appendChild(row);
+    }
+  }
+
+  function drawWeeklyChart(chartDefn) {
+
+    if (chartDefn.chart) {
+      chartDefn.chart.destroy();
+    }
+
+    chartDefn.goalData = [];
+    chartDefn.data = [];
+
+    for (let i = 0; i < 7; i++) {
+      chartDefn.goalData.push(Math.ceil((i + 1) * (chartDefn.goal / 7)));
+    }
+
+    let result = filterWeeklyActivities(chartDefn.sportType, chartDefn.metric, chartDefn.firstDay, chartDefn.lastDay);
+    chartDefn.data = result.data;
+    chartDefn.barData = result.barData;
+    let prevData = result.prevData;
+
+    let datasets = [];
+
+    datasets.push({
+      type: 'line',
+      label: 'Goal',
+      data: chartDefn.goalData,
+      borderWidth: 1
+    });
+
+    datasets.push({
+      type: 'line',
+      label: activityMetadata.get(chartDefn.metric).displayName,
+      data: chartDefn.data,
+      borderWidth: 1
+    });
+
+    datasets.push({
+      type: 'bar',
+      label: activityMetadata.get(chartDefn.metric).displayName + ' from Activities',
+      data: chartDefn.barData,
+      borderWidth: 1
+    });
+
+    if (chartDefn.showPrevious) {
+      datasets.push({
+        type: 'line',
+        label: "Previous " + activityMetadata.get(chartDefn.metric).displayName,
+        data: prevData,
+        borderWidth: 1,
+        borderDash: [10, 5],
+      });
+    }
+
+    const ctx = document.getElementById(chartDefn.domId);
+
+    chartDefn.chart = new Chart(ctx, {
+      data: {
+        labels: chartDefn.labels,
+        datasets: datasets,
+      },
+      options: {
+        animation: false,
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  function getStandardDeviation(array) {
+    const n = array.length;
+    const mean = array.reduce((a, b) => a + b) / n;
+    const stdDev = Math.sqrt(array.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n);
+
+    return { mean: mean, stdDev: stdDev };
+  }
+
+  async function fetchFromService(token, epochTime, refreshToken, expiresAt) {
+    const response = await fetch('fetch_data?token=' + token +
+      '&lasttime=' + epochTime +
+      '&refreshtoken=' + refreshToken +
+      '&expiresat=' + expiresAt);
+    if (!response.ok) {
+      throw new Error("Service error: " + response.statusText);
+    }
+
+    localStorage.setItem("accessToken", response.headers.get("accesstoken"));
+    localStorage.setItem("expiresAt", response.headers.get("expiresat"));
+    localStorage.setItem("refreshToken", response.headers.get("refreshtoken"));
+
+    return response.text();
+  }
+
+  // TODO: Still hardcoded for Pace, maybe generalize?
+  function filterAnnualActivities(sportType, metric, selectedYear) {
+    let result = {
+      data: [],
+      stats: {},
+    };
+
+    result.data.push({ x: new Date("01-01-" + selectedYear.getFullYear()), y: null });
+    result.data.push({ x: new Date("12-31-" + selectedYear.getFullYear()), y: null });
+
+    for (let i = 0; i < activities.length; i++) {
+      let activity = activities[i];
+      let start = new Date(activity.start_date_local.slice(0, -1));
+
+      if (start.getFullYear() == selectedYear.getFullYear() &&
+        activity.sport_type == sportType) {
+        let tmpDate = new Date(null);
+        tmpDate.setSeconds(activity.pace);
+        result.data.push({ x: start, y: tmpDate.toISOString() });
+      }
+    }
+
+    // Generate stats for this metric
+    let paceArray = [];
+    for (let i = 0; i < activities.length; i++) {
+      if (activities[i].sport_type == sportType) {
+        paceArray.push(activities[i].pace);
+      }
+    }
+
+    let stdDevInfo = getStandardDeviation(paceArray);
+    result.stats = stdDevInfo;
+    return result;
+  }
+
+  function filterMonthlyActivities(sportType, metric, selectedMonth) {
+    let result = {
+      data: [],
+      prevData: [],
+      barData: []
+    };
+
+    let numDays = getDaysInMonth(selectedMonth);
+    result.data = Array(numDays);
+
+    for (let i = 0; i < result.data.length; i++) {
+      result.data[i] = 0;
+      result.prevData[i] = 0;
+    }
+
+    let prevMonth = new Date(selectedMonth.getTime());
+    prevMonth.setMonth(selectedMonth.getMonth() - 1);
+
+    // TODO: previous months may have different number of days than selected month, consider handling
+    for (let i = 0; i < activities.length; i++) {
+      let activity = activities[i];
+      let start = new Date(activity.start_date_local.slice(0, -1));
+
+      if (start.getFullYear() == selectedMonth.getFullYear() &&
+        start.getMonth() == selectedMonth.getMonth() &&
+        /*selectedSports.get(activity.sport_type)*/
+        activity.sport_type == sportType) {
+        let day = start.getDate() - 1;
+        result.data[day] += activity[metric];
+      }
+
+      if (start.getFullYear() == prevMonth.getFullYear() &&
+        start.getMonth() == prevMonth.getMonth() &&
+        /*selectedSports.get(activity.sport_type)*/
+        activity.sport_type == sportType) {
+        let day = start.getDate() - 1;
+        result.prevData[day] += activity[metric];
+      }
+    }
+
+    result.barData = result.data.slice();
+
+    for (let i = 1; i < result.data.length; i++) {
+      result.data[i] = result.data[i] + result.data[i - 1];
+      if (metric == 'total_elevation_gain') {
+        result.data[i] = Math.ceil(result.data[i]);
+        result.barData[i] = Math.ceil(result.barData[i]);
+      }
+    }
+
+    for (let i = 1; i < result.prevData.length; i++) {
+      result.prevData[i] = result.prevData[i] + result.prevData[i - 1];
+      if (metric == 'total_elevation_gain') {
+        result.prevData[i] = Math.ceil(result.prevData[i]);
+      }
+    }
+
+    return result;
+  }
+
+  function filterWeeklyActivities(sportType, metric, firstDay, lastDay) {
+    let result = {
+      data: [],
+      prevData: [],
+      barData: []
+    };
+
+    for (let i = 0; i < 7; i++) {
+      result.data.push(0);
+      result.prevData.push(0);
+    }
+
+    let prevFirst = new Date(firstDay.getTime());
+    prevFirst.setDate(firstDay.getDate() - 7);
+
+    let prevLast = new Date(lastDay.getTime());
+    prevLast.setDate(lastDay.getDate() - 7);
+
+    for (let i = 0; i < activities.length; i++) {
+      let activity = activities[i];
+      let start = new Date(activity.start_date_local.slice(0, -1));
+
+      if ((start.getTime() >= firstDay.getTime()) &&
+        (start.getTime() <= lastDay.getTime()) &&
+        /*selectedSports.get(activity.sport_type)*/
+        activity.sport_type == sportType) {
+        let modDay = start.getDay() - 1;
+        if (modDay < 0) {
+          modDay = 6;
+        }
+        result.data[modDay] += activity[metric];
+      }
+
+      if ((start.getTime() >= prevFirst.getTime()) &&
+        (start.getTime() <= prevLast.getTime()) &&
+        /*selectedSports.get(activity.sport_type)*/
+        activity.sport_type == sportType) {
+        let modDay = start.getDay() - 1;
+        if (modDay < 0) {
+          modDay = 6;
+        }
+        result.prevData[modDay] += activity[metric];
+      }
+    }
+
+    result.barData = result.data.slice();
+
+    for (let i = 1; i < result.data.length; i++) {
+      result.data[i] = result.data[i] + result.data[i - 1];
+      if (metric == 'total_elevation_gain') {
+        result.data[i] = Math.ceil(result.data[i]);
+        result.barData[i] = Math.ceil(result.barData[i]);
+      }
+    }
+
+    for (let i = 1; i < result.prevData.length; i++) {
+      result.prevData[i] = result.prevData[i] + result.prevData[i - 1];
+      if (metric == 'total_elevation_gain') {
+        result.prevData[i] = Math.ceil(result.prevData[i]);
+      }
+    }
+
+    return result;
+  }
+
+  function formatActivities(newActivities) {
+    for (let i = 0; i < newActivities.length; i++) {
+      //Weird data issue: some people have activities with zero distance!
+      let distance = newActivities[i].distance;
+      if (distance < 1) {
+        distance = 1;
+      }
+      //NEW: pace in sec/mile
+      newActivities[i].pace = newActivities[i].moving_time / (Number.parseFloat(distance) / 1609.344);
+      let tmpDate = new Date(null);
+      tmpDate.setSeconds(newActivities[i].pace);
+      newActivities[i].pace_string = tmpDate.toISOString().slice(11, 19);
+
+      //5K
+      if (distance >= 5000) {
+        let fiveKInMiles = 3.106856;
+        let secsInFiveK = newActivities[i].pace * fiveKInMiles;
+        tmpDate = new Date(null);
+        tmpDate.setSeconds(secsInFiveK);
+        newActivities[i].five_k = tmpDate.toISOString().slice(11, 19);
+      }
+
+      //10K
+      if (distance >= 10000) {
+        let tenKInMiles = 6.213712;
+        let secsInTenK = newActivities[i].pace * tenKInMiles;
+        tmpDate = new Date(null);
+        tmpDate.setSeconds(secsInTenK);
+        newActivities[i].ten_k = tmpDate.toISOString().slice(11, 19);
+      }
+
+      //Half
+      if (distance >= 21097.494) {
+        let secsInHalfMarathon = newActivities[i].pace * 13.109375;
+        tmpDate = new Date(null);
+        tmpDate.setSeconds(secsInHalfMarathon);
+        newActivities[i].half_marathon = tmpDate.toISOString().slice(11, 19);
+      }
+
+      //Marathon
+      if (distance >= 42194.988) {
+        let secsInMarathon = newActivities[i].pace * 26.21875;
+        tmpDate = new Date(null);
+        tmpDate.setSeconds(secsInMarathon);
+        newActivities[i].marathon = tmpDate.toISOString().slice(11, 19);
+      }
+      newActivities[i].start_date = formatDate(new Date(newActivities[i].start_date));
+      // Meters to miles
+      newActivities[i].distance = (Number.parseFloat(distance) / 1609.344);
+      // Seconds to hh:mm:ss
+      let seconds = Number.parseInt(newActivities[i].moving_time);
+      let tempDate = new Date(null);
+      tempDate.setSeconds(seconds);
+      newActivities[i].moving_time = tempDate.toISOString().slice(11, 19);
+      // Meters to feet
+      newActivities[i].total_elevation_gain = (Number.parseFloat(newActivities[i].total_elevation_gain) * 3.28084);
+      // Meters/s to Miles/hr
+      newActivities[i].average_speed = (Number.parseFloat(newActivities[i].average_speed) * 2.23693629);
+      newActivities[i].max_speed = (Number.parseFloat(newActivities[i].max_speed) * 2.23693629);
+    }
+  }
+
+  // Since Date.toISOString() uses UTC, roll my own for local time to get the desired yyyy-mm-dd format
+  function formatDate(d) {
+
+    let month = d.getMonth() + 1;
+    if (month < 10) {
+      month = "0" + month;
+    }
+
+    let day = d.getDate();
+    if (day < 10) {
+      day = "0" + day;
+    }
+    return d.getFullYear() + "-" + month + "-" + day;
+  }
+
+  function getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+  function getDaysInMonth(timestamp) {
+    return new Date(timestamp.getYear(), timestamp.getMonth() + 1, 0).getDate();
+  }
+
+  function getDaysInYear(date) {
+    let year = date.getFullYear();
+    return ((year % 4 === 0 && year % 100 > 0) || year % 400 == 0) ? 366 : 365;
+  }
+
+  function getFirstDayOfWeek(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+
+    // day of month - day of week (-6 if Sunday), otherwise +1
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+
+    return new Date(date.setDate(diff));
+  }
+
+  async function getStravaData(isFirstLoad) {
+
+    let epochTime = 0;
+
+    let timestamp = localStorage.getItem("dataTimestamp");
+    if (timestamp != null) {
+      let lastRefreshDate = new Date(Date.parse(timestamp));
+      epochTime = lastRefreshDate.getTime() / 1000;
+      let diffInSeconds = (new Date().getTime() - lastRefreshDate.getTime()) / 1000;
+      let delay = 60 * 60 * 1;
+
+      if (diffInSeconds < delay) {
+        alert("Please wait at least one hour between data refreshes.");
+        return;
+      }
+    }
+
+    document.getElementById("data-loading-modal").style.display = "block";
+    try {
+      let token = localStorage.getItem('accessToken');
+      let refreshToken = localStorage.getItem('refreshToken');
+      let expiresAt = localStorage.getItem('expiresAt');
+      const result = await fetchFromService(token, epochTime, refreshToken, expiresAt);
+      localStorage.setItem("dataTimestamp", new Date().toString());
+      document.getElementById("data-timestamp").innerHTML = new Date(localStorage.getItem("dataTimestamp")).toLocaleString();
+      let newActivities = JSON.parse(result);
+      formatActivities(newActivities);
+
+      if (isFirstLoad) {
+        activities = [];
+      } else {
+        activities = JSON.parse(localStorage.getItem("activities"));
+      }
+
+      // This works assuming we never fetch duplicate activities. 
+      // Also, we currently persist any activities that are deleted on Strava
+      activities = activities.concat(newActivities);
+      localStorage.setItem("activities", JSON.stringify(activities));
+
+      if (isFirstLoad) {
+        initSelectedSports();
+        initSelectedColumns();
+      } // TODO: merge new sports from the future!
+
+      if (!localStorage.getItem("earliestActivityDate")) {
+        setEarliestActivityDate();
+      }
+      createAllTabluarData();
+      drawWeeklyChart(chartDefns.cyclingWeeklyElevationProgress);
+      drawWeeklyChart(chartDefns.weeklyDistanceProgress);
+      drawMonthlyChart(chartDefns.monthlyElevationProgress);
+      drawMonthlyChart(chartDefns.monthlyDistanceProgress);
+      drawTable(tableDefns.activities, JSON.parse(localStorage.getItem("tabluarActivities")));
+      drawTable(tableDefns.cycling, JSON.parse(localStorage.getItem("tabluarActivitiesCycling")));
+      drawTable(tableDefns.running, JSON.parse(localStorage.getItem("tabluarActivitiesRunning")));
+      drawTable(tableDefns.hiking, JSON.parse(localStorage.getItem("tabluarActivitiesHiking")));
+
+      // Hack to ensure we start sorted by most recent activity :P
+      sortTable(tableDefns.activities, 1);
+      sortTable(tableDefns.activities, 1);
+      sortTable(tableDefns.cycling, 1);
+      sortTable(tableDefns.cycling, 1);
+      sortTable(tableDefns.running, 1);
+      sortTable(tableDefns.running, 1);
+      sortTable(tableDefns.hiking, 1);
+      sortTable(tableDefns.hiking, 1);
+
+    } catch (error) {
+      console.log("Error calling service to refresh data: " + error.message)
+    }
+    document.getElementById("data-loading-modal").style.display = "none";
+  }
+
+  function handleColumnSelectionCancel() {
+    let dialog = document.getElementById("column-selection-dialog");
+    dialog.close();
+  }
+
+  function handleColumnSelectionOpen() {
+    let dialog = document.getElementById("column-selection-dialog");
+
+    let fieldSet = document.getElementById("column-selection-dialog-fieldset");
+    fieldSet.replaceChildren();
+
+    let newColumnInput;
+    for (const column of tableDefns.activities.selectedColumns.keys()) {
+      newColumnInput = document.createElement("input");
+      newColumnInput.setAttribute("type", "checkbox");
+      newColumnInput.setAttribute("name", "column");
+      newColumnInput.setAttribute("value", column);
+      newColumnInput.checked = tableDefns.activities.selectedColumns.get(column);
+      if (column == "name" || column == "start_date") {
+        newColumnInput.setAttribute("disabled", "");
+      }
+      fieldSet.appendChild(newColumnInput);
+      tempLabel = document.createElement("label");
+      tempLabel.textContent = activityMetadata.get(column).displayName;
+      fieldSet.appendChild(tempLabel);
+      fieldSet.appendChild(document.createElement("br"));
+    }
+
+
+    dialog.showModal();
+  }
+
+  function handleColumnSelectionSave() {
+    let dialog = document.getElementById("column-selection-dialog");
+    let items = document.getElementsByName("column");
+    let tempItems = [];
+
+    let count = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].checked) {
+        count++;
+        tempItems.push(items[i].value);
+      }
+    }
+
+    if (count == 0) {
+      alert("Please select at least one column");
+      return;
+    }
+
+    for (const key of tableDefns.activities.selectedColumns.keys()) {
+      tableDefns.activities.selectedColumns.set(key, false);
+    }
+
+    for (const item of tempItems) {
+       tableDefns.activities.selectedColumns.set(item, true);
+    }
+
+    localStorage.setItem("selectedColumnsMap", JSON.stringify(Array.from( tableDefns.activities.selectedColumns.entries())));
+
+    createTabularData(tableDefns.activities);
+    drawTable(tableDefns.activities, JSON.parse(localStorage.getItem("tabluarActivities")));
+    // Hack to ensure we start sorted by most recent activity :P
+    sortTable(tableDefns.activities, 1);
+    sortTable(tableDefns.activities, 1);
+
+    dialog.close();
+  }
+
+  function handleMonthlyGoalChange(value, chartDefnName) {
+    chartDefns[chartDefnName].goal = value;
+    let goals = JSON.parse(localStorage.getItem("goals"));
+    goals[chartDefnName] = value;
+    localStorage.setItem("goals", JSON.stringify(goals));
+    drawMonthlyChart(chartDefns[chartDefnName]);
+  }
+
+  function handlePageLoad() {
+
+    // Read cookie values...
+    localStorage.setItem("accessToken", getCookie('access_token'));
+    localStorage.setItem("expiresAt", getCookie('expires_at'));
+    localStorage.setItem("refreshToken", getCookie('refresh_token'));
+    localStorage.setItem("athleteName", getCookie('athlete_name'));
+    localStorage.setItem("athleteCity", getCookie('athlete_city'));
+    localStorage.setItem("athletePicURL", getCookie('athlete_pic_url'));
+
+    document.getElementById("pic").src = localStorage.getItem("athletePicURL");
+    document.getElementById("name").innerHTML = localStorage.getItem("athleteName");
+    document.getElementById("city").innerHTML = localStorage.getItem("athleteCity");
+    document.getElementById("data-timestamp").innerHTML = new Date(localStorage.getItem("dataTimestamp")).toLocaleString();
+
+    const today = new Date();
+    let firstDay = getFirstDayOfWeek(today);
+    firstDay.setHours(0, 0, 0, 0);
+    let lastDay = new Date(firstDay);
+    lastDay.setDate(lastDay.getDate() + 6);
+    lastDay.setHours(23, 59, 59, 999);
+    chartDefns.cyclingWeeklyElevationProgress.firstDay = firstDay;
+    chartDefns.cyclingWeeklyElevationProgress.lastDay = lastDay;
+    chartDefns.weeklyDistanceProgress.firstDay = firstDay;
+    chartDefns.weeklyDistanceProgress.lastDay = lastDay;
+
+    updateWeekRangeUI("cyclingWeeklyElevationProgress");
+    updateWeekRangeUI("weeklyDistanceProgress");
+    updateMonthUI("monthlyElevationProgress");
+    updateMonthUI("monthlyDistanceProgress");
+    updateAnnualUI("annualPaceTrend");
+
+    if (!localStorage.getItem("goals")) {
+      initGoals();
+    }
+    hydrateGoals();
+
+    if (localStorage.getItem("activities") == null) {
+      getStravaData(true);
+    }
+    else {
+      activities = JSON.parse(localStorage.getItem("activities"));
+      if (!localStorage.getItem("earliestActivityDate")) {
+        setEarliestActivityDate();
+      }
+      selectedSports = new Map(JSON.parse(localStorage.getItem("selectedSportsMap")));
+      if (!localStorage.getItem("selectedColumnsMap")) {
+        initSelectedColumns();
+      }
+      tableDefns.activities.selectedColumns = new Map(JSON.parse(localStorage.getItem("selectedColumnsMap")));
+
+      updateSelectedSportsUI();
+      drawWeeklyChart(chartDefns.cyclingWeeklyElevationProgress);
+      drawWeeklyChart(chartDefns.weeklyDistanceProgress);
+      drawMonthlyChart(chartDefns.monthlyElevationProgress);
+      drawMonthlyChart(chartDefns.monthlyDistanceProgress);
+      drawAnnualChart(chartDefns.annualPaceTrend);
+      createAllTabluarData();
+      drawTable(tableDefns.activities, JSON.parse(localStorage.getItem("tabluarActivities")));
+      drawTable(tableDefns.cycling, JSON.parse(localStorage.getItem("tabluarActivitiesCycling")));
+      drawTable(tableDefns.running, JSON.parse(localStorage.getItem("tabluarActivitiesRunning")));
+      drawTable(tableDefns.hiking, JSON.parse(localStorage.getItem("tabluarActivitiesHiking")));
+      // Hack to ensure we start sorted by most recent activity :P
+      sortTable(tableDefns.activities, 1);
+      sortTable(tableDefns.activities, 1);
+      sortTable(tableDefns.cycling, 1);
+      sortTable(tableDefns.cycling, 1);
+      sortTable(tableDefns.running, 1);
+      sortTable(tableDefns.running, 1);
+      sortTable(tableDefns.hiking, 1);
+      sortTable(tableDefns.hiking, 1);
+    }
+  }
+
+  function handlePreviousChecked(isChecked, chartDefnName) {
+    chartDefns[chartDefnName].showPrevious = isChecked;
+    chartDefns[chartDefnName].drawFunction(chartDefns[chartDefnName]);
+  }
+
+  function handleShiftMonth(direction, chartDefnName) {
+    if (direction == 'back') {
+      chartDefns[chartDefnName].selectedMonth.setMonth(chartDefns[chartDefnName].selectedMonth.getMonth() - 1);
+    }
+    else if (direction == 'forward') {
+      chartDefns[chartDefnName].selectedMonth.setMonth(chartDefns[chartDefnName].selectedMonth.getMonth() + 1);
+    }
+    else if (direction == 'today') {
+      chartDefns[chartDefnName].selectedMonth = new Date();
+    }
+
+    updateMonthUI(chartDefnName);
+    drawMonthlyChart(chartDefns[chartDefnName]);
+  }
+
+  function handleShiftWeek(direction, chartDefnName) {
+    if (direction == 'back') {
+      chartDefns[chartDefnName].firstDay.setDate(chartDefns[chartDefnName].firstDay.getDate() - 7);
+      chartDefns[chartDefnName].lastDay.setDate(chartDefns[chartDefnName].lastDay.getDate() - 7);
+    }
+    else if (direction == 'forward') {
+      chartDefns[chartDefnName].firstDay.setDate(chartDefns[chartDefnName].firstDay.getDate() + 7);
+      chartDefns[chartDefnName].lastDay.setDate(chartDefns[chartDefnName].lastDay.getDate() + 7);
+    }
+    else if (direction == "today") {
+      const today = new Date();
+      chartDefns[chartDefnName].firstDay = getFirstDayOfWeek(today);
+      chartDefns[chartDefnName].firstDay.setHours(0, 0, 0, 0);
+      chartDefns[chartDefnName].lastDay = new Date(chartDefns[chartDefnName].firstDay);
+      chartDefns[chartDefnName].lastDay.setDate(chartDefns[chartDefnName].lastDay.getDate() + 6);
+      chartDefns[chartDefnName].lastDay.setHours(23, 59, 59, 999);
+    }
+
+    updateWeekRangeUI(chartDefnName);
+    drawWeeklyChart(chartDefns[chartDefnName]);
+  }
+
+  function handleShiftYear(direction, chartDefnName) {
+    if (direction == 'back') {
+      chartDefns[chartDefnName].selectedYear.setYear(chartDefns[chartDefnName].selectedYear.getFullYear() - 1);
+    }
+    else if (direction == 'forward') {
+      chartDefns[chartDefnName].selectedYear.setYear(chartDefns[chartDefnName].selectedYear.getFullYear() + 1);
+    }
+    else if (direction == 'today') {
+      chartDefns[chartDefnName].selectedYear = new Date();
+    }
+
+    updateAnnualUI(chartDefnName);
+    drawAnnualChart(chartDefns[chartDefnName]);
+  }
+
+  function handleSportsSelectionOpen() {
+    let dialog = document.getElementById("sport-selection-dialog");
+
+    let fieldSet = document.getElementById("sport-selection-dialog-fieldset");
+    fieldSet.replaceChildren();
+
+    let newSportInput;
+    for (const sport of selectedSports.keys()) {
+      newSportInput = document.createElement("input");
+      newSportInput.setAttribute("type", "checkbox");
+      newSportInput.setAttribute("name", "sport");
+      newSportInput.setAttribute("value", sport);
+      newSportInput.checked = selectedSports.get(sport);
+      fieldSet.appendChild(newSportInput);
+      tempLabel = document.createElement("label");
+      tempLabel.textContent = sport;
+      fieldSet.appendChild(tempLabel);
+      fieldSet.appendChild(document.createElement("br"));
+    }
+
+    dialog.showModal();
+  }
+
+  function handleSportSelectionCancel() {
+    let dialog = document.getElementById("sport-selection-dialog");
+    dialog.close();
+  }
+
+  function handleSportSelectionSave() {
+    let dialog = document.getElementById("sport-selection-dialog");
+    let items = document.getElementsByName("sport");
+    let tempItems = [];
+
+    let count = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].checked) {
+        count++;
+        tempItems.push(items[i].value);
+      }
+    }
+
+    if (count == 0) {
+      alert("Please select at least one sport");
+      return;
+    }
+
+    for (const key of selectedSports.keys()) {
+      selectedSports.set(key, false);
+    }
+
+    for (const item of tempItems) {
+      selectedSports.set(item, true);
+    }
+
+    localStorage.setItem("selectedSportsMap", JSON.stringify(Array.from(selectedSports.entries())));
+    updateSelectedSportsUI();
+
+    createTabularData(tableDefns.activities);
+    drawTable(tableDefns.activities, JSON.parse(localStorage.getItem("tabluarActivities")));
+
+    // Hack to ensure we start sorted by most recent activity :P
+    sortTable(tableDefns.activities, 1);
+    sortTable(tableDefns.activities, 1);
+
+    dialog.close();
+  }
+
+  function handleWeeklyGoalChange(value, chartDefnName) {
+    chartDefns[chartDefnName].goal = value;
+    let goals = JSON.parse(localStorage.getItem("goals"));
+    goals[chartDefnName] = value;
+    localStorage.setItem("goals", JSON.stringify(goals));
+    drawWeeklyChart(chartDefns[chartDefnName]);
+  }
+
+  function hydrateGoals() {
+    let goals = JSON.parse(localStorage.getItem("goals"));
+    let elt = document.getElementById("cycling-weekly-elevation-goal-input");
+    elt.setAttribute("value", goals.cyclingWeeklyElevationProgress);
+    elt.setAttribute("min", 100);
+    elt.setAttribute("max", 100000);
+    elt.setAttribute("step", 100);
+
+    elt = document.getElementById("monthly-elevation-goal-input");
+    elt.setAttribute("value", goals.monthlyElevationProgress);
+    elt.setAttribute("min", 100);
+    elt.setAttribute("max", 100000);
+    elt.setAttribute("step", 100);
+
+    elt = document.getElementById("weekly-distance-goal-input");
+    elt.setAttribute("value", goals.weeklyDistanceProgress);
+    elt.setAttribute("min", 1);
+    elt.setAttribute("max", 1000);
+    elt.setAttribute("step", .25);
+
+    elt = document.getElementById("monthly-distance-goal-input");
+    elt.setAttribute("value", goals.monthlyDistanceProgress);
+    elt.setAttribute("min", 1);
+    elt.setAttribute("max", 1000);
+    elt.setAttribute("step", 5);
+  }
+
+  function initGoals() {
+    // Note: key names are the same as chartDefns names
+    let goals = {
+      cyclingWeeklyElevationProgress: 2000,
+      monthlyElevationProgress: 10000,
+      weeklyDistanceProgress: 20,
+      monthlyDistanceProgress: 80,
+    };
+
+    localStorage.setItem("goals", JSON.stringify(goals));
+  }
+
+  function initSelectedColumns() {
+    for (let i = 0; i < tableDefns.activities.columnIDs.length; i++) {
+      tableDefns.activities.selectedColumns.set(tableDefns.activities.columnIDs[i], true);
+    }
+
+    localStorage.setItem("selectedColumnsMap", JSON.stringify(Array.from(tableDefns.activities.selectedColumns.entries())));
+  }
+
+  function initSelectedSports() {
+    for (let i = 0; i < activities.length; i++) {
+      selectedSports.set(activities[i].sport_type, true);
+    }
+
+    localStorage.setItem("selectedSportsMap", JSON.stringify(Array.from(selectedSports.entries())));
+    updateSelectedSportsUI();
+  }
+
+  function setEarliestActivityDate() {
+    //TODO: Consider implementing
+  }
+
+  function sortTable(tableDefn, columnIndex) {
+    const tableBody = document.getElementById(tableDefn.prefix + "TableBody");
+    const rows = Array.from(tableBody.querySelectorAll("tr"));
+
+    rows.sort((a, b) => {
+      const aValue = a.children[columnIndex].textContent;
+      const bValue = b.children[columnIndex].textContent;
+
+      // Handle numeric sorting for columns like Distance, Time, Elevation Gain
+      if (!isNaN(aValue) && !isNaN(bValue)) {
+        if (tableDefn.columnSortDirections.get(columnIndex)) {
+          return aValue - bValue;
+        }
+        else {
+          return bValue - aValue;
+        }
+      }
+
+      // Default to string comparison
+      if (tableDefn.columnSortDirections.get(columnIndex)) {
+        return aValue.localeCompare(bValue);
+      }
+      else {
+        return bValue.localeCompare(aValue);
+      }
+    });
+
+    tableDefn.columnSortDirections.set(columnIndex, !tableDefn.columnSortDirections.get(columnIndex));
+
+    // Clear and re-append sorted rows
+    tableBody.innerHTML = "";
+    rows.forEach(row => tableBody.appendChild(row));
+  }
+
+  function updateAnnualUI(chartDefnName) {
+    let chartInfo = chartDefns[chartDefnName];
+    let year = chartInfo.selectedYear.getFullYear().toString();
+    document.getElementById(chartInfo.selectedYearDomId).textContent = year;
+  }
+
+  function updateSelectedSportsUI() {
+    let selectedSportsSpan = document.getElementById("selected-sports-list");
+    let text = "";
+    for (const entry of selectedSports.entries()) {
+      if (entry[1]) {
+        text = text + entry[0] + ", ";
+      }
+    }
+    selectedSportsSpan.innerText = text.substring(0, text.length - 2);
+  }
+
+  function updateMonthUI(chartDefnName) {
+    let chartInfo = chartDefns[chartDefnName];
+    let month = chartInfo.selectedMonth.toLocaleString('default', { month: 'long' });
+    let year = chartInfo.selectedMonth.getFullYear().toString();
+    document.getElementById(chartInfo.selectedMonthDomId).textContent = month + " " + year;
+  }
+
+  function updateWeekRangeUI(chartDefnName) {
+    let chartInfo = chartDefns[chartDefnName];
+    document.getElementById(chartInfo.weekStartDomId).textContent = formatDate(chartInfo.firstDay);
+    document.getElementById(chartInfo.weekEndDomId).textContent = formatDate(chartInfo.lastDay);
+  }
+
+</script>
+
+</html>

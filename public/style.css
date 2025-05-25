@@ -1,0 +1,235 @@
+@import 'https://fonts.googleapis.com/css?family=Roboto:400,700';
+
+.in-progress.my-class-1 {
+	--wave-diameter: 220px;
+	--wave-thickness: 9px;
+	--wave-duration: 3s;
+  text-align: center;
+  top: 220px;
+}
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+dialog::backdrop {
+  background-image: linear-gradient(
+    45deg,
+    magenta,
+    rebeccapurple,
+    dodgerblue,
+    green
+  );
+  opacity: 0.75;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  cursor: pointer;
+  background-color: #f2f2f2;
+}
+
+.bar {
+  fill: steelblue;
+}
+
+.trendline {
+  fill: none;
+  stroke: red;
+  stroke-width: 2px;
+}
+
+.targetline {
+  fill: none;
+  stroke: green;
+  stroke-width: 2px;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+/* images and videos max out at full width */
+img,
+video {
+  height: auto;
+  max-width: 100%;
+}
+
+a {
+  color: #f83a08;
+  text-decoration: none;
+  background-color: transparent;
+}
+
+a:link {
+  text-decoration: none;
+}
+
+a:visited {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button 
+{
+  background-color: #f83a08;
+  color: #FFFFFF;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+
+*, :before, :after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+body {
+  background: #f7f7fa;
+  font-family: Roboto;
+}
+
+input[name=tabs] {
+  display: none;
+}
+input[name=tabs]#tab-1:checked ~ .content .tab:nth-of-type(1) {
+  display: inline-block;
+}
+input[name=tabs]#tab-1:checked ~ .tabs label:nth-child(1) {
+  color: #242b36;
+}
+input[name=tabs]#tab-1:checked ~ .tabs label:nth-child(1):after {
+  width: calc(100%);
+  transition: 0.3s;
+}
+input[name=tabs]#tab-2:checked ~ .content .tab:nth-of-type(2) {
+  display: inline-block;
+}
+input[name=tabs]#tab-2:checked ~ .tabs label:nth-child(2) {
+  color: #242b36;
+}
+input[name=tabs]#tab-2:checked ~ .tabs label:nth-child(2):after {
+  width: calc(100%);
+  transition: 0.3s;
+}
+input[name=tabs]#tab-3:checked ~ .content .tab:nth-of-type(3) {
+  display: inline-block;
+}
+input[name=tabs]#tab-3:checked ~ .tabs label:nth-child(3) {
+  color: #242b36;
+}
+input[name=tabs]#tab-3:checked ~ .tabs label:nth-child(3):after {
+  width: calc(100%);
+  transition: 0.3s;
+}
+input[name=tabs]#tab-4:checked ~ .content .tab:nth-of-type(4) {
+  display: inline-block;
+}
+input[name=tabs]#tab-4:checked ~ .tabs label:nth-child(4) {
+  color: #242b36;
+}
+input[name=tabs]#tab-4:checked ~ .tabs label:nth-child(4):after {
+  width: calc(100%);
+  transition: 0.3s;
+}
+
+.tabs {
+  box-shadow: 0 20px 50px -25px rgba(0, 0, 0, 0.3);
+  overflow-X: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  white-space: nowrap;
+}
+.tabs label {
+  display: inline-block;
+  padding: 18px;
+  position: relative;
+  color: #bbc3d1;
+  font-weight: 700;
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+}
+.tabs label:after {
+  content: "";
+  background: #f83a08;
+  width: 0;
+  height: 4px;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: 0.1s;
+}
+
+.container {
+  background: #FFF;
+  width: 100%;
+  border-radius: 3px;
+  box-shadow: 0 50px 75px -25px rgba(0, 0, 0, 0.3);
+  margin: 25px auto;
+  overflow: hidden;
+}
+.container .tab {
+  display: none;
+  padding: 0 20px;
+  width: 100%;
+}
+
+/* Fancy checkbox from https://www.includehelp.com/html/css-checkboxes-examples.aspx */
+.switch-checkbox {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    appearance: none;
+    background-color: #ccc;
+    outline: none;
+    cursor: pointer;
+    border-radius: 20px;
+    transition: background 0.3s;
+}
+.switch-checkbox:checked {
+    background-color: #f83a08;
+}
+.switch-checkbox:after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+.switch-checkbox:checked:after {
+    left: 22px;
+}

@@ -1,0 +1,44 @@
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="/favicon-orange.png" />
+  <title>My Stats Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta property="og:title" content="My Stats Page">
+  <meta property="og:description"
+    content="Your Strava data at a glance. It features useful charts, goals, tables and other ways of looking at your data.">
+  <meta property="og:image" content="/myStatsPageLogo.png">
+  <meta property="og:site_name" content="My Stats Page">
+  <meta property="og:url" content="https://www.mystatspage.com">
+
+  <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+  <img src="/api_logo_pwrdBy_strava_horiz_light.png" style="position: absolute;top: 0px;right: 0px;max-height: 40px" />
+
+  <div style="display: flex; align-items: center; margin-top:-20px">
+    <h1>
+      My Stats Page
+    </h1>
+    <img src="/myStatsPage.png" style="max-height: 70px; margin-left: 10px" />
+  </div>
+
+  <div>
+    <h3>
+      Welcome! To get started, let's give this site autorization to read your Strava
+      data.
+    </h3>
+    <input type="image" src="/btn_strava_connect_with_orange.png" onclick="window.open({{oauthURL}},'_self')"
+      style="margin-top:10px; margin-bottom:10px" />
+    <div><i>Privacy Notice: Our server never keeps your data. We fetch it from Strava and your browser keeps a copy of
+        it in local storage.</i>
+    </div>
+  </div>
+  <script>
+  </script>
+</body>
+
+</html>
